@@ -1,0 +1,471 @@
+---
+title: "Tesi"
+author: "Lorenzo Grossi"
+date: "2024-02-04"
+output: html_document
+---bo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## LIBRARIES
+
+```{r}
+library(corrplot) # Per visualizzare la matrice di correlazione come una heatmap
+library(ggplot2) # Per i grafici
+library(caret) # Per l'addestramento dei modelli di machine learning
+library(R.matlab)
+library(readxl)
+
+# Pacchetti per Machine Learning
+library(e1071) # Per il classificatore SVM
+library(caTools) 
+library(caret) 
+library(class)
+   
+# Outlier
+
+library(MASS)
+library(rgl)
+library(DepthProc)
+library(hexbin)
+library(aplpack)
+library(robustbase)
+
+
+
+```
+
+## IMPORT
+
+```{r}
+# Import
+
+BankClients <- read_excel("/Users/Lorenzo/Desktop/Tesi/BankClients.xlsx")
+
+
+#summary(BankClients)
+```
+
+## NUMERIC TO PLOT
+
+```{r}
+
+# Visualizza le dipendenze delle variabili numeriche
+Datatoplot <- BankClients[7:17]
+Datatoplot <- cbind(Age=BankClients$Age, Datatoplot)
+
+xnames <- c("Age", "familysize", "income", "wealth", "debt", "finedu", "esg", "digital", "bankfriend", "lifestyle", "luxury", "savings")
+
+```
+
+## OUTLIER DETECTION
+
+```{r}
+
+#tukey_depth=depth(u=Datatoplot,method='Tukey')
+
+#maha_depth=depth(Datatoplot,method='Mahalanobis') 
+
+#summary(maha_depth)
+
+
+
+columns_to_plot <- Datatoplot[, c(1,6,8,10)]
+
+bagplot_matrix <- aplpack::bagplot.pairs(columns_to_plot, col.baghull="green", col.loophull="lightgreen",main="Bagplot of some pairs of variables")
+
+
+# Ho provato tutte le coppie di variabili; trovo outliers nei bagplot tra 
+# 1:6, 1:12
+# 3:6, 3:7, 3:8, 3:9
+# 4:10
+# 5:8, 5:12    
+# 6:7, 6:8, 6:10, 6:12
+#fino a qua sono: 2218 4346 4641 4926  782 3564 1099   16   62  341 1446 2167 3074 3759 4488 
+#       2296 1722 2766  373 2052 2159 3686 3690  111  347 1134 1260
+#     1277 2048 2218 2917 3030 3173 3756 4694  543 2054 2064 2218  373 2159 2180 2861 3690 4273
+# 7:8, 7:9, 7:10
+# 8:9, 8:10, 8:11, 8:12
+
+
+
+
+
+```
+
+Ora procedo così: mi segno gli ID dei vari outliers in ogni coppia; se uno lo ritrovo sempre lo considero outliere per la distribuzione multivariata.
+
+```{r}
+
+# metto vuoto il vettore e lo priempio a mano a mano per ogni copia di variabili con outliers
+all_outliers<-c()
+
+```
+
+```{r}
+
+# qui ho variato tutte le copie che ho messo nella tabella sopra questa, e le ho aggiunte al vettore con tutti gli outliers
+
+bagplot_result <- bagplot(Datatoplot$FinEdu, Datatoplot$Digital)
+
+out <- bagplot_result$pxy.outlier
+
+selected_out <- subset(BankClients, FinEdu == out[1,1] & Digital == out[1,2])$ID
+
+#all_out_old<-all_outliers
+#all_outliers<-c(all_out_old, selected_out)
+
+
+```
+
+Alla fine sono: 2218 4346 4641 4926 782 3564 1099 16 62 341 1446 2167 3074 3759 4488 2296 1722 2766 373 2052 2159 3686 3690 111 347 1134 1260 1277 2048 2218 2917 3030 3173 3756 4694 543 2054 2064 2218 373 2159 2180 2861 3690 4273 1331 3255 3288 3564 2940 3288 1169 2940 2044 2551 4936 2722 4441 1016 2351 4288 111 1134 1331 1429 1722 2861 2900 3288 3480 3914 4442 4895
+
+Ora voglio vedere quante volte sono ripetuti, in particolare se uno compare come outlier per tante coppie di variabili
+
+```{r}
+frequenze<-table(all_outliers)
+
+print(frequenze)
+```
+
+```{r}
+par(cex.lab = 1.5, cex.axis = 1.2, font.lab = 2)  # Aumenta la dimensione del testo delle etichette e degli assi, e rende i titoli degli assi in grassetto
+
+bagplot(Datatoplot$FinEdu, Datatoplot$LifeStyle, show.whiskers = FALSE, transparency = TRUE, xlab="Financial Education", ylab="LifeStyle")
+
+box()
+
+points(0.06413865, 0.8811514, col = "darkgreen", pch = 13, cex = 2)
+
+```
+
+## IDEA DA SVILUPPARE: DDPLOT DATI SINTETICI
+
+Prova DDplot per verificare che i dati sintetici sono la stessa distribuzione dei dati originale, vedi Lab01 di nonparametric stastics, non ci vuole molto.
+
+```{r}
+
+```
+
+## PLOT CARINI DA PROVARE
+
+```{r}
+# # Installing the package 
+# install.packages("dplyr") 
+# install.packages("ggplot2")
+#    
+# # Loading packages 
+# library(dplyr) 
+# library(ggplot2)
+#  
+# # Data Layer 
+# ggplot(data = mtcars) 
+#     
+# # Aesthetic Layer 
+# ggplot(data = mtcars, aes(x = hp, 
+#                           y = mpg,
+#                           col = disp)) 
+#     
+# # Geometric layer 
+# ggplot(data = mtcars,  
+#        aes(x = hp, y = mpg, 
+#            col = disp)) + geom_point()
+```
+
+## PLOTS TO INVESTIGATE DEPENDENCIES
+
+```{r}
+
+#x11()
+pairs(Datatoplot)
+
+# 
+# # Grouping by Gender
+# ggplot(BankClients, aes(x = factor(Gender), y = Age)) +
+#   geom_bar(stat = "identity") +
+#   facet_wrap(~Gender) +
+#   labs(title = "Grouping by Gender")
+
+
+
+
+```
+
+## PCA (TROVARE PLOT CARINO)
+
+```{r}
+
+BankClients_st <- scale(BankClients[, c(2, 7:17)])
+
+set.seed(12345)
+
+pca_result <- prcomp(BankClients_st, scale. = TRUE)
+
+print(summary(pca_result))
+
+summ =summary(pca_result)
+
+summ
+
+plot(pca_result)
+
+# Caricamenti delle variabili sui componenti principali
+print(pca_result$rotation)
+
+# composizioni delle prime 5 componenti principali
+
+# Numero di componenti principali da visualizzare
+num_pc <- 5  # Ad esempio, visualizzeremo i primi 5 PC
+
+# Estrai i caricamenti delle variabili sui componenti principali
+loadings <- pca_result$rotation[, 1:num_pc]
+
+nomi<-colnames(BankClients_st)
+
+# Crea un istogramma per ogni componente principale
+for (var in 1:ncol(loadings)) {
+  barplot(loadings[, var], col="skyblue", main = "NUMERO Principal Component", las=2)
+}
+
+
+```
+
+```{r}
+sum((pca_result$sdev)^2)
+
+```
+
+## CORRELATIONS
+
+```{r}
+# Correlazioni
+correlation <- cor(BankClients_st)
+
+# Visualizza la matrice di correlazione come una heatmap
+corrplot(correlation, method = "color", type = "upper", addCoef.col = "black")
+```
+
+## GAUSSIANITY
+
+```{r}
+# Controlli di normalità univariata
+filt_inv=subset(BankClients, Investments == 1)
+shapiro.test(filt_inv$Income)
+
+filt_inv=subset(BankClients, Investments == 2)
+shapiro.test(filt_inv$Income)
+
+filt_inv=subset(BankClients, Investments == 3)
+shapiro.test(filt_inv$Income)
+
+shapiro.test(BankClients$Income)
+
+# nessuna variabile presa singolarmente è gaussiana
+
+```
+
+## Preparazione
+
+```{r}
+dati_ml=BankClients[,2:18]
+
+dati_ml$Gender=factor(dati_ml$Gender)
+dati_ml$Job=factor(dati_ml$Job)
+dati_ml$Area=factor(dati_ml$Area)
+dati_ml$CitySize=factor(dati_ml$CitySize)
+dati_ml$Investments=factor(dati_ml$Investments)
+
+sapply(dati_ml, class)
+
+dati_ml$Age=dati_ml$Age/100
+# dati_ml$Income=dati_ml$Income
+# dati_ml$Wealth=dati_ml$Wealth
+# dati_ml$Debt=dati_ml$Debt
+# dati_ml$FinEdu=dati_ml$FinEdu
+# dati_ml$ESG=dati_ml$ESG
+# dati_ml$Digital=dati_ml$Digital
+# dati_ml$BankFriend=dati_ml$BankFriend
+# dati_ml$LifeStyle=dati_ml$LifeStyle
+# dati_ml$Luxury=dati_ml$Luxury
+# dati_ml$Saving=dati_ml$Saving
+dati_ml$FamilySize=dati_ml$FamilySize/6
+
+# box and whisker plots for each attribute
+#featurePlot(x=dati_ml[,c(1,6:16)], y=dati_ml$Investments, plot="box")
+
+names(dati_ml)
+# Cambia il nome della colonna
+names(dati_ml)[names(dati_ml) == "FinEdu"] <- "Financial Education"
+
+# Controlla i nuovi nomi delle colonne
+names(dati_ml)
+
+```
+
+```{r}
+
+cost_labels<-c("No investments", "Lump Sum", "Capital Accumulation")
+
+featurePlot(x=dati_ml[,c(1,6:16)], y=dati_ml$Investments, plot="density", auto.key = list(columns = 3, title = "Investor Types", lines = TRUE, text = cost_labels, cex=1.5))
+
+#legend("topright", legend = levels(dati_ml$Investments), col = featurePlotObj$colors, pch = #featurePlotObj$symbols)
+
+#tapply(BankClients$Age, BankClients$Investments, mean)
+
+
+```
+
+```{r}
+library(ggplot2)
+
+data_to_plot=dati_ml[,c(1,6:17)]
+
+
+
+ggplot(data_to_plot) + 
+geom_density(aes(x=BankClients$Age, colour=Investments),show.legend=TRUE)
+```
+
+## Lancio di algoritmi vari con CV
+
+```{r}
+
+# Run algorithms using 10-fold cross validation
+control <- trainControl(method="cv", number=8)
+metric <- "Accuracy"
+
+# a) linear algorithms
+set.seed(7)
+fit.lda <- train(Investments~., data=dati_ml, method="lda", metric=metric, trControl=control)
+# b) nonlinear algorithms
+# CART
+set.seed(7)
+fit.cart <- train(Investments~., data=dati_ml, method="rpart", metric=metric, trControl=control)
+# kNN
+set.seed(7)
+fit.knn <- train(Investments~., data=dati_ml, method="knn", metric=metric, trControl=control)
+# c) advanced algorithms
+# SVM
+set.seed(7)
+fit.svm <- train(Investments~., data=dati_ml, method="svmRadial", metric=metric, trControl=control)
+# Random Forest
+set.seed(7)
+fit.rf <- train(Investments~., data=dati_ml, method="rf", metric=metric, trControl=control)
+```
+
+## Valutazione migliore
+
+```{r}
+
+# summarize accuracy of models
+results <- resamples(list(lda=fit.lda, cart=fit.cart, knn=fit.knn, svm=fit.svm, rf=fit.rf))
+summary(results)
+
+# compare accuracy of models
+dotplot(results)
+```
+
+## PREDIZIONI CON MODELLO MIGLIORE
+
+The SVM was the most accurate model. Now we want to get an idea of the accuracy of the model on our validation set.
+
+This will give us an independent final check on the accuracy of the best model. It is valuable to keep a validation set just in case you made a slip during such as overfitting to the training set or a data leak. Both will result in an overly optimistic result.
+
+We can run the SVM model directly on the validation set and summarize the results in a confusion matrix.
+
+```{r}
+#MODIFICARE
+# estimate skill of LDA on the validation dataset
+predictions <- predict(fit.svm, validation)
+confusionMatrix(predictions, validation$Species)
+```
+
+## NAIVE BAYES
+
+***CONTROLLARE***
+
+```{r}
+
+# Splitting dei dati
+
+num_righe <- nrow(dati_ml)
+
+# Calcolare il numero di righe per il training set e il test set
+
+set.seed(1234)
+
+num_righe_training <- round(0.7 * num_righe)  # 70% dei dati per il training set
+num_righe_test <- num_righe - num_righe_training  # Il resto per il test set
+
+# Selezionare casualmente gli indici delle righe per il training set
+indici_training <- sample(1:num_righe, num_righe_training, replace = FALSE)
+
+# Creare il training set
+training_set <- dati_ml[indici_training, ]
+
+# Creare il test set includendo solo le righe non presenti nel training set
+test_set <- dati_ml[-indici_training, ]
+   
+# Fitting Naive Bayes Model  
+# to training dataset 
+
+classifier_cl <- naiveBayes(Investments ~ ., 
+                            data = dati_ml) 
+classifier_cl 
+   
+# Predicting on test data' 
+y_pred <- predict(classifier_cl,
+                  newdata = test_set) 
+   
+# Confusion Matrix 
+cm <- table(test_set$Investments, y_pred) 
+cm
+```
+
+## KNN
+
+```{r}
+# Fitting KNN Model  
+# to training dataset 
+classifier_knn <- knn(train = training_set[,-17], 
+                      test = test_set[,-17], 
+                      cl = training_set$Investments, 
+                      k = 100)
+   
+# Confusion Matrix 
+cm <- table(test_set$Investments, classifier_knn) 
+cm 
+   
+# Model Evaluation - Choosing K 
+# Calculate out of Sample error 
+misClassError <- mean(classifier_knn != test_set$Investments) 
+print(paste('Accuracy =', 1 - misClassError))
+```
+
+## IMPORTO I DATI SINTETICI
+
+```{r}
+
+sintetici <- read.csv("/Users/Lorenzo/Desktop/Tesi/sintetici100k.csv", sep=';')
+
+
+```
+
+GRAFICI PER VALUTARE
+
+```{r}
+ddPlot(sintetici, BankClients[,2:18],depth_params = list(method='Tukey'))
+
+ddPlot(sintetici, BankClients[,2:18],depth_params = list(method='Mahalanobis'))
+
+```
+
+```{r}
+
+min(sintetici$Wealth)
+max(sintetici$Debt)
+
+```
